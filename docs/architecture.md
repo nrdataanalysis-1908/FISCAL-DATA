@@ -15,6 +15,7 @@ O sistema atende inicialmente uma empresa fictícia de comércio. Os domínios f
 ## Persistência local
 
 O arquivo padrão é `database/fiscal_data.db`. Na inicialização da API, o script `database/init.sql` cria as tabelas e insere a empresa e os lançamentos fictícios, sem duplicá-los em reinicializações. O SQLite utiliza tipos nativos simples: identificadores em TEXT, datas em texto ISO-8601, valores monetários em NUMERIC e estruturas JSON em TEXT.
+As conexões abertas pelo SQLAlchemy habilitam explicitamente `PRAGMA foreign_keys=ON`, pois a integridade referencial do SQLite é configurada por conexão.
 
 Não há dependência de PostgreSQL, Docker ou serviço externo para o ambiente local. Para cenários multiusuário ou concorrência elevada, a camada de persistência poderá ser migrada posteriormente para PostgreSQL gerenciado, sem tornar isso requisito de desenvolvimento.
 
