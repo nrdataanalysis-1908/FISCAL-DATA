@@ -1,5 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 import os
+import sqlite3
+from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
@@ -7,16 +9,34 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg://fiscal_data:change_me@localhost:5432/fiscal_data",
+ROOT_DIR = Path(__file__).resolve().parents[2]
+DATABASE_DIR = ROOT_DIR / "database"
+DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+DATABASE_FILE = DATABASE_DIR / "fiscal_data.db"
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_FILE.as_posix()}")
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+    pool_pre_ping=True,
 )
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
+
+def initialize_database() -> None:
+    """Create the local SQLite schema and load the fictitious demo dataset once."""
+    if DATABASE_URL.startswith("sqlite"):
+        init_script = DATABASE_DIR / "init.sql"
+        with sqlite3.connect(DATABASE_FILE) as connection:
+            connection.executescript(init_script.read_text(encoding="utf-8"))
+            connection.commit()
+
+
+initialize_database()
 
 app = FastAPI(
     title="NR Fiscal Intelligence API",
-    version="0.1.0",
-    description="API demonstrativa de inteligência contábil, fiscal e financeira.",
+    version="0.2.0",
+    description="API demonstrativa de inteligência contábil, fiscal e financeira com SQLite local.",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -52,15 +72,13 @@ def health():
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        return {"status": "ok", "database": "connected", "version": "0.1.0"}
+        return {"status": "ok", "database": "connected", "database_engine": "SQLite", "version": "0.2.0"}
     except Exception as exc:
         raise HTTPException(status_code=503, detail="Banco de dados indisponível.") from exc
 
 
 @app.get("/api/v1/transactions")
-def list_transactions(
-    period: str = Query("2026-10", pattern=r"^\d{4}-\d{2}$")
-):
+def list_transactions(period: str = Query("2026-10", pattern=r"^\d{4}-\d{2}$")):
     with engine.connect() as conn:
         company_id = get_company_id(conn)
         rows = conn.execute(
@@ -69,7 +87,7 @@ def list_transactions(
                        dre_group, amount, source
                 FROM transactions
                 WHERE company_id = :company_id
-                  AND to_char(occurred_on, 'YYYY-MM') = :period
+                  AND substr(occurred_on, 1, 7) = :period
                 ORDER BY occurred_on, description
             """),
             {"company_id": company_id, **period_filter(period)},
@@ -78,11 +96,11 @@ def list_transactions(
     return [
         {
             "id": str(row["id"]),
-            "date": row["occurred_on"].isoformat(),
+            "date": row["occurred_on"],
             "description": row["description"],
             "type": row["transaction_type"],
             "group": row["dre_group"],
-            "amount": str(row["amount"]),
+            "amount": str(Decimal(str(row["amount"])).quantize(Decimal("0.01"))),
             "source": row["source"],
         }
         for row in rows
@@ -98,14 +116,14 @@ def get_dre(period: str = Query("2026-10", pattern=r"^\d{4}-\d{2}$")):
                 SELECT dre_group, SUM(amount) AS total
                 FROM transactions
                 WHERE company_id = :company_id
-                  AND to_char(occurred_on, 'YYYY-MM') = :period
+                  AND substr(occurred_on, 1, 7) = :period
                   AND status = 'POSTED'
                 GROUP BY dre_group
             """),
             {"company_id": company_id, **period_filter(period)},
         ).mappings().all()
 
-    totals = {row["dre_group"]: Decimal(row["total"]) for row in rows}
+    totals = {row["dre_group"]: Decimal(str(row["total"])) for row in rows}
     zero = Decimal("0.00")
     gross = totals.get("GROSS_REVENUE", zero)
     deductions = totals.get("SALES_DEDUCTIONS", zero)
