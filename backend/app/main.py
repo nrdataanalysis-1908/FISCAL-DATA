@@ -1,6 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 import sqlite3
 from pathlib import Path
+import re
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
@@ -59,9 +60,23 @@ def get_company_id(conn):
     return company
 
 
+def _validate_period_value(value: str) -> str:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(r"(?!0000)\\d{4}-(?:0[1-9]|1[0-2])", value) is None
+    ):
+        raise ValueError("period must be a valid year and month in YYYY-MM format")
+    return value
+
+
 def period_filter(period: str) -> dict:
-    if len(period) != 7 or period[4] != "-":
-        raise HTTPException(status_code=422, detail="Período deve seguir AAAA-MM.")
+    try:
+        _validate_period_value(period)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="Período deve seguir AAAA-MM com mês entre 01 e 12.",
+        ) from exc
     return {"period": period}
 
 
