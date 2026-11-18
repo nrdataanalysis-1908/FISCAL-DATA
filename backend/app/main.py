@@ -1,5 +1,4 @@
 from decimal import Decimal, ROUND_HALF_UP
-import os
 import sqlite3
 from pathlib import Path
 from typing import Literal
@@ -13,22 +12,21 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 DATABASE_DIR = ROOT_DIR / "database"
 DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 DATABASE_FILE = DATABASE_DIR / "fiscal_data.db"
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_FILE.as_posix()}")
+DATABASE_URL = f"sqlite:///{DATABASE_FILE.as_posix()}"
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
+    connect_args={"check_same_thread": False},
     pool_pre_ping=True,
 )
 
 
 def initialize_database() -> None:
     """Create the local SQLite schema and load the fictitious demo dataset once."""
-    if DATABASE_URL.startswith("sqlite"):
-        init_script = DATABASE_DIR / "init.sql"
-        with sqlite3.connect(DATABASE_FILE) as connection:
-            connection.executescript(init_script.read_text(encoding="utf-8"))
-            connection.commit()
+    init_script = DATABASE_DIR / "init.sql"
+    with sqlite3.connect(DATABASE_FILE) as connection:
+        connection.executescript(init_script.read_text(encoding="utf-8"))
+        connection.commit()
 
 
 initialize_database()
