@@ -6,7 +6,7 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import create_engine, text
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -188,6 +188,11 @@ class TaxEstimateRequest(BaseModel):
     illustrative_rate_percent: Decimal = Field(ge=0, le=100)
     reference_period: str = Field(pattern=r"^\d{4}-\d{2}$")
     scenario_name: str = Field(min_length=3, max_length=100)
+
+    @field_validator("reference_period")
+    @classmethod
+    def validate_reference_period(cls, value: str) -> str:
+        return _validate_period_value(value)
 
 
 @app.post("/api/v1/tax/scenarios/estimate")
