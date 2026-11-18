@@ -3,6 +3,7 @@ import os
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, text
 
@@ -16,6 +17,13 @@ app = FastAPI(
     title="NR Fiscal Intelligence API",
     version="0.1.0",
     description="API demonstrativa de inteligência contábil, fiscal e financeira.",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 
@@ -170,4 +178,19 @@ def estimate_tax(payload: TaxEstimateRequest):
             "Não consulta legislação, não determina alíquota aplicável "
             "e não constitui apuração tributária oficial."
         ),
+    }
+
+
+@app.get("/api/v1/dashboard/summary")
+def dashboard_summary(period: str = Query("2026-10", pattern=r"^\\d{4}-\\d{2}$")):
+    dre = get_dre(period)
+    transactions = list_transactions(period)
+    return {
+        "period": period,
+        "gross_revenue": dre["gross_revenue"],
+        "net_revenue": dre["net_revenue"],
+        "net_income": dre["net_income"],
+        "net_margin_percent": dre["net_margin_percent"],
+        "transaction_count": len(transactions),
+        "is_simulated": True,
     }
