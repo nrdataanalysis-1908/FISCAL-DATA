@@ -37,6 +37,7 @@ Plataforma experimental de inteligência fiscal, contábil e financeira para uma
 │   ├── requirements.txt
 │   └── tests/
 ├── database/init.sql
+├── frontend/app/       # Next.js dashboard
 ├── docs/
 │   ├── architecture.md
 │   └── tax-model.md
@@ -51,6 +52,7 @@ Com Docker Desktop instalado:
 docker compose up --build
 ```
 
+Dashboard: http://localhost:3000  
 API: http://localhost:8000  
 Swagger: http://localhost:8000/docs  
 Health check: http://localhost:8000/health
