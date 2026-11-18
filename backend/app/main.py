@@ -7,7 +7,7 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATABASE_DIR = ROOT_DIR / "database"
@@ -20,6 +20,14 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
     pool_pre_ping=True,
 )
+
+@event.listens_for(engine, "connect")
+def _enable_sqlite_foreign_keys(dbapi_connection, connection_record) -> None:
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("PRAGMA foreign_keys=ON")
+    finally:
+        cursor.close()
 
 
 def initialize_database() -> None:
