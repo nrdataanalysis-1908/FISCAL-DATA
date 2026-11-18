@@ -94,11 +94,9 @@ Acesse:
 - `GET /api/v1/transactions?period=2026-10`
 - `POST /api/v1/tax/scenarios/estimate`
 
-## Persistência e configuração
+## Persistência
 
-O banco padrão fica em `database/fiscal_data.db`. O SQLite é embarcado no Python e não exige instalação de servidor, Docker ou serviço externo.
-
-Opcionalmente, a variável `DATABASE_URL` pode apontar para outro arquivo SQLite. O script de inicialização automática é destinado ao banco local padrão do projeto.
+O banco padrão fica em `database/fiscal_data.db`. O SQLite é embarcado no Python e não exige instalação de servidor, PostgreSQL, Docker ou serviço externo. Não é necessário configurar `DATABASE_URL`.
 
 ## Motores públicos de referência
 
