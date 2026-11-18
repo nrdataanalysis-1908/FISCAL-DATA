@@ -63,7 +63,7 @@ def get_company_id(conn):
 def _validate_period_value(value: str) -> str:
     if (
         not isinstance(value, str)
-        or re.fullmatch(r"(?!0000)\\d{4}-(?:0[1-9]|1[0-2])", value) is None
+        or re.fullmatch(r"(?!0000)\d{4}-(?:0[1-9]|1[0-2])", value) is None
     ):
         raise ValueError("period must be a valid year and month in YYYY-MM format")
     return value
