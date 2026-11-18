@@ -182,7 +182,7 @@ def estimate_tax(payload: TaxEstimateRequest):
 
 
 @app.get("/api/v1/dashboard/summary")
-def dashboard_summary(period: str = Query("2026-10", pattern=r"^\\d{4}-\\d{2}$")):
+def dashboard_summary(period: str = Query("2026-10", pattern=r"^\d{4}-\d{2}$")):
     dre = get_dre(period)
     transactions = list_transactions(period)
     return {
