@@ -194,6 +194,14 @@ class TaxEstimateRequest(BaseModel):
     def validate_reference_period(cls, value: str) -> str:
         return _validate_period_value(value)
 
+    @field_validator("scenario_name")
+    @classmethod
+    def normalize_scenario_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if len(normalized) < 3:
+            raise ValueError("scenario_name must contain at least three non-whitespace characters")
+        return normalized
+
 
 @app.post("/api/v1/tax/scenarios/estimate")
 def estimate_tax(payload: TaxEstimateRequest):
