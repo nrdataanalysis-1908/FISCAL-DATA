@@ -1,33 +1,33 @@
 # NR Fiscal Intelligence
 
-Plataforma experimental de inteligência fiscal, contábil e financeira para uma empresa fictícia de comércio.
+An experimental tax, accounting, and financial intelligence platform for a fictional retail company.
 
-> **Aviso:** esta versão utiliza dados simulados. Não realiza apuração fiscal oficial, não substitui escrituração contábil e não deve ser utilizada para recolhimento de tributos.
+> **Disclaimer:** This version uses simulated data. It does not perform official tax assessments, replace statutory bookkeeping, or support actual tax payments.
 
-## Objetivos
+## Objectives
 
-- Consolidar vendas, custos, despesas e documentos fiscais.
-- Produzir uma DRE gerencial reproduzível.
-- Simular cenários tributários para Simples Nacional e Regime Regular.
-- Preparar integrações desacopladas com motores públicos da Reforma Tributária.
-- Manter rastreabilidade de dados, regras, versões e resultados.
+- Consolidate sales, costs, expenses, and tax documents.
+- Produce a reproducible management income statement.
+- Simulate tax scenarios for Simples Nacional and the Regular Tax Regime.
+- Prepare decoupled integrations with public Tax Reform engines.
+- Maintain traceability across data, rules, versions, and results.
 
-## Escopo atual
+## Current scope
 
-1. API FastAPI com indicadores, movimentações e DRE gerencial.
-2. SQLite local, criado automaticamente na primeira inicialização.
-3. Base fictícia da NR Tech Store, carregada de forma idempotente.
-4. Endpoint de estimativa matemática ilustrativa — a taxa é informada pelo usuário e não é inferida pelo sistema.
-5. Dashboard Next.js com indicadores e DRE.
+1. FastAPI service with indicators, transactions, and a management income statement.
+2. Local SQLite database, created automatically on first startup.
+3. Fictional NR Tech Store dataset, loaded idempotently.
+4. Illustrative mathematical estimate endpoint — the rate is supplied by the user and is not inferred by the system.
+5. Next.js dashboard with indicators and income statement.
 
-## Tecnologias
+## Technology stack
 
-- Python 3.12+, FastAPI, Pydantic e SQLAlchemy
-- SQLite (sem servidor de banco de dados)
-- Next.js 14, React 18 e TypeScript
-- Pytest e GitHub Actions
+- Python 3.12+, FastAPI, Pydantic, and SQLAlchemy
+- SQLite (no database server required)
+- Next.js 14, React 18, and TypeScript
+- Pytest and GitHub Actions
 
-## Estrutura
+## Repository structure
 
 ```text
 .
@@ -37,7 +37,7 @@ Plataforma experimental de inteligência fiscal, contábil e financeira para uma
 │   └── tests/
 ├── database/
 │   ├── init.sql
-│   └── fiscal_data.db       # criado automaticamente; não versionado
+│   └── fiscal_data.db       # created automatically; not versioned
 ├── frontend/
 │   └── app/
 ├── docs/
@@ -46,11 +46,11 @@ Plataforma experimental de inteligência fiscal, contábil e financeira para uma
 └── .github/workflows/ci.yml
 ```
 
-## Execução local no Windows (PowerShell)
+## Local setup on Windows (PowerShell)
 
-Abra um terminal na pasta do projeto.
+Open a terminal in the project directory.
 
-### 1. Preparar o backend
+### 1. Set up the backend
 
 ```powershell
 python -m venv .venv
@@ -59,19 +59,19 @@ python -m pip install --upgrade pip
 pip install -r .\backend\requirements.txt
 ```
 
-### 2. Iniciar a API
+### 2. Start the API
 
-Na raiz do projeto, com o ambiente virtual ativado:
+From the project root, with the virtual environment activated:
 
 ```powershell
 python -m uvicorn app.main:app --app-dir backend --reload
 ```
 
-Na primeira inicialização, o arquivo `database/fiscal_data.db` e as tabelas serão criados e os dados fictícios serão inseridos automaticamente.
+On first startup, the `database/fiscal_data.db` file and its tables are created, and the fictional sample data is inserted automatically.
 
-### 3. Iniciar o frontend
+### 3. Start the frontend
 
-Abra outro PowerShell na raiz do projeto:
+Open another PowerShell window in the project root:
 
 ```powershell
 Set-Location "$HOME\FISCAL-DATA\frontend"
@@ -79,7 +79,7 @@ npm install
 npm run dev
 ```
 
-Acesse:
+Open:
 
 - Dashboard: http://localhost:3000
 - API: http://localhost:8000
@@ -94,35 +94,35 @@ Acesse:
 - `GET /api/v1/transactions?period=2026-10`
 - `POST /api/v1/tax/scenarios/estimate`
 
-## Persistência
+## Persistence
 
-O banco padrão fica em `database/fiscal_data.db`. O SQLite é embarcado no Python e não exige instalação de servidor, PostgreSQL, Docker ou serviço externo. Não é necessário configurar `DATABASE_URL`.
+The default database is located at `database/fiscal_data.db`. SQLite is embedded in Python and does not require a server installation, PostgreSQL, Docker, or an external service. There is no need to configure `DATABASE_URL`.
 
-## Motores públicos de referência
+## Public reference engines
 
-- [Calculadora RTC — Regime Regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular)
-- [Calculadora RTC — Simples Nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional)
+- [RTC Calculator — Regular Tax Regime](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular)
+- [RTC Calculator — Simples Nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional)
 
-A integração será implementada por adaptadores independentes após análise dos contratos, instruções de execução, dependências, licença e versões de cada repositório. Não presumimos compatibilidade de API entre os motores.
+Integration will be implemented through independent adapters after reviewing each repository's contracts, execution instructions, dependencies, license, and versions. API compatibility between the engines is not assumed.
 
-## Princípios de engenharia
+## Engineering principles
 
-- Valores monetários tratados com `Decimal` na camada Python.
-- Regime tributário, natureza da operação e classificação fiscal não são intercambiáveis.
-- Nenhuma alíquota universal aplicada indiscriminadamente ao faturamento.
-- Regras fiscais devem possuir fonte normativa, vigência e versão.
-- Simulações devem ser explicitamente identificadas e segregadas de dados oficiais.
-- Toda integração deve ter testes de contrato e registro de versão.
+- Monetary values are handled with `Decimal` in the Python layer.
+- Tax regime, transaction nature, and tax classification are not interchangeable.
+- No universal tax rate is indiscriminately applied to revenue.
+- Tax rules must have a regulatory source, effective period, and version.
+- Simulations must be explicitly labeled and kept separate from official data.
+- Every integration must have contract tests and version tracking.
 
 ## Roadmap
 
-- [x] Estrutura inicial e documentação
-- [x] Banco SQLite e carga idempotente dos dados demonstrativos
-- [x] API de indicadores e DRE demonstrativa
-- [x] Interface web de indicadores
-- [ ] Cadastro de produtos, NCM e operações
-- [ ] Importação de XML fiscal
-- [ ] Adaptador do motor RTC — Regime Regular
-- [ ] Adaptador do motor RTC — Simples Nacional
-- [ ] Comparador de cenários e trilha de auditoria
-- [ ] Autenticação, autorização e segregação multiempresa
+- [x] Initial structure and documentation
+- [x] SQLite database and idempotent loading of demonstration data
+- [x] API for demonstration indicators and income statement
+- [x] Web interface for indicators
+- [ ] Product, NCM, and transaction registration
+- [ ] Tax XML import
+- [ ] RTC engine adapter — Regular Tax Regime
+- [ ] RTC engine adapter — Simples Nacional
+- [ ] Scenario comparison and audit trail
+- [ ] Authentication, authorization, and multi-company data isolation
