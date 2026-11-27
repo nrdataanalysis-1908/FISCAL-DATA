@@ -1,12 +1,13 @@
 from decimal import Decimal, ROUND_HALF_UP
 import sqlite3
 from pathlib import Path
+import re
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from sqlalchemy import create_engine, text
+from pydantic import BaseModel, Field, field_validator
+from sqlalchemy import create_engine, event, text
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
 DATABASE_DIR = ROOT_DIR / "database"
@@ -19,6 +20,14 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
     pool_pre_ping=True,
 )
+
+@event.listens_for(engine, "connect")
+def _enable_sqlite_foreign_keys(dbapi_connection, connection_record) -> None:
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("PRAGMA foreign_keys=ON")
+    finally:
+        cursor.close()
 
 
 def initialize_database() -> None:
@@ -59,9 +68,23 @@ def get_company_id(conn):
     return company
 
 
+def _validate_period_value(value: str) -> str:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(r"(?!0000)\d{4}-(?:0[1-9]|1[0-2])", value) is None
+    ):
+        raise ValueError("period must be a valid year and month in YYYY-MM format")
+    return value
+
+
 def period_filter(period: str) -> dict:
-    if len(period) != 7 or period[4] != "-":
-        raise HTTPException(status_code=422, detail="Período deve seguir AAAA-MM.")
+    try:
+        _validate_period_value(period)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail="Período deve seguir AAAA-MM com mês entre 01 e 12.",
+        ) from exc
     return {"period": period}
 
 
@@ -173,6 +196,19 @@ class TaxEstimateRequest(BaseModel):
     illustrative_rate_percent: Decimal = Field(ge=0, le=100)
     reference_period: str = Field(pattern=r"^\d{4}-\d{2}$")
     scenario_name: str = Field(min_length=3, max_length=100)
+
+    @field_validator("reference_period")
+    @classmethod
+    def validate_reference_period(cls, value: str) -> str:
+        return _validate_period_value(value)
+
+    @field_validator("scenario_name")
+    @classmethod
+    def normalize_scenario_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if len(normalized) < 3:
+            raise ValueError("scenario_name must contain at least three non-whitespace characters")
+        return normalized
 
 
 @app.post("/api/v1/tax/scenarios/estimate")
